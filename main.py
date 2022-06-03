@@ -21,7 +21,13 @@ def main():
         endrank = int(input("Enter the ending y coord: "))
         endfile = int(input("Enter the ending x coord: "))
         board.make_move(Move(Square(startrank, startfile), Square(endrank, endfile)))
-        engine.make_move()
+        if not engine.make_move():
+            if board.is_in_checkmate(engine.color):
+                print("Checkmate! You win!")
+            elif board.is_in_stalemate(engine.color):
+                print("Stalemate! It's a draw!")
+            else:
+                print("Error, no legal moves determined")
 
 if __name__ == '__main__':
     main()

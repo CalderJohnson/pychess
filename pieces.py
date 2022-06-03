@@ -9,6 +9,9 @@ class Piece:
     def generate_moves(self, board : list[list[str]]):
         """Abstract method, requires board for relative reference"""
         yield None
+    def get_value(self) -> int:
+        """Abstract method, returns the material value of the piece"""
+        return 0
 
 class Pawn(Piece):
     """Models a pawn on the chessboard"""
@@ -41,6 +44,13 @@ class Pawn(Piece):
                 yield Move(self.square, Square(self.square.rank + direction, self.square.file - 1))
         except IndexError:
             pass
+    
+    def get_value(self) -> int:
+        """Returns the value of the pawn"""
+        if self.color == 'W':
+            return 1
+        elif self.color == 'B':
+            return -1
 
 class Knight(Piece):
     """Models a knight on the chessboard"""
@@ -72,16 +82,19 @@ class Knight(Piece):
         for move in knightmoves:
             yield move
 
+    def get_value(self) -> int:
+        """Returns the value of the knight"""
+        return 3
+
 class Bishop(Piece):
     """Models a bishop on the chessboard"""
     def generate_moves(self, board : list[list[str]]):
         """Returns all possible moves for the bishop"""
-        
-        smaller_coord = min(self.square.rank, self.square.file)
-        larger_coord = max(self.square.rank, self.square.file)
 
         #positive positive diagonal
-        for i in range(1, 8 - larger_coord):
+        for i in range(1, 8):
+            if self.square.rank + i > 7 or self.square.file + i > 7:
+                break
             if board[self.square.rank + i][self.square.file + i] == '-':
                 yield Move(self.square, Square(self.square.rank + i, self.square.file + i))
             else:
@@ -90,7 +103,9 @@ class Bishop(Piece):
                 break
 
         #negative positive diagonal
-        for i in range(1, 8 - larger_coord):
+        for i in range(1, 8):
+            if self.square.rank - i < 0 or self.square.file + i > 7:
+                break
             if board[self.square.rank - i][self.square.file + i] == '-':
                 yield Move(self.square, Square(self.square.rank - i, self.square.file + i))
             else:
@@ -99,7 +114,9 @@ class Bishop(Piece):
                 break
         
         #positive negative diagonal
-        for i in range(1, 8 - smaller_coord):
+        for i in range(1, 8):
+            if self.square.file - i < 0 or self.square.rank + i > 7:
+                break
             if board[self.square.rank + i][self.square.file - i] == '-':
                 yield Move(self.square, Square(self.square.rank + i, self.square.file - i))
             else:
@@ -108,13 +125,22 @@ class Bishop(Piece):
                 break
         
         #negative negative diagonal
-        for i in range(1, 8 - smaller_coord):
+        for i in range(1, 8):
+            if self.square.rank - i < 0 or self.square.file - i < 0:
+                break
             if board[self.square.rank - i][self.square.file - i] == '-':
                 yield Move(self.square, Square(self.square.rank - i, self.square.file - i))
             else:
                 if is_enemy_color(piece_to_string(self), board[self.square.rank - i][self.square.file - i]):
                     yield Move(self.square, Square(self.square.rank - i, self.square.file - i))
                 break
+
+    def get_value(self) -> int:
+        """Returns the value of the bishop"""
+        if self.color == 'W':
+            return 3
+        elif self.color == 'B':
+            return -3
 
 class Rook(Piece):
     """Models a rook on the chessboard"""
@@ -122,7 +148,7 @@ class Rook(Piece):
         """Returns all possible moves for the rook"""
 
         #positive horizontal moves
-        for i in range(self.square.rank, 8):
+        for i in range(self.square.file, 8):
             if board[self.square.rank][i] == '-':
                 yield Move(self.square, Square(self.square.rank, i))
             else:
@@ -131,7 +157,7 @@ class Rook(Piece):
                 break
         
         #negative horizontal moves
-        for i in range(self.square.rank, -1, -1):
+        for i in range(self.square.file, -1, -1):
             if board[self.square.rank][i] == '-':
                 yield Move(self.square, Square(self.square.rank, i))
             else:
@@ -140,7 +166,7 @@ class Rook(Piece):
                 break
 
         #positive vertical moves
-        for i in range(self.square.file, 8):
+        for i in range(self.square.rank, 8):
             if board[i][self.square.file] == '-':
                 yield Move(self.square, Square(i, self.square.file))
             else:
@@ -149,7 +175,7 @@ class Rook(Piece):
                 break
         
         #negative vertical moves
-        for i in range(self.square.file, -1, -1):
+        for i in range(self.square.rank, -1, -1):
             if board[i][self.square.file] == '-':
                 yield Move(self.square, Square(i, self.square.file))
             else:
@@ -157,16 +183,23 @@ class Rook(Piece):
                     yield Move(self.square, Square(i, self.square.file))
                 break
 
+    def get_value(self) -> int:
+        if self.color == 'W':
+            return 5
+        elif self.color == 'B':
+            return -5
+
 class Queen(Piece):
     """Models a queen on the chessboard"""
     def generate_moves(self, board : list[list[str]]):
+        #TODO copy bishops code over
         """Returns all possible moves for the queen"""
 
         smaller_coord = min(self.square.rank, self.square.file)
         larger_coord = max(self.square.rank, self.square.file)
 
         #positive horizontal moves
-        for i in range(self.square.rank, 8):
+        for i in range(self.square.file, 8):
             if board[self.square.rank][i] == '-':
                 yield Move(self.square, Square(self.square.rank, i))
             else:
@@ -175,7 +208,7 @@ class Queen(Piece):
                 break
 
         #negative horizontal moves
-        for i in range(self.square.rank, -1, -1):
+        for i in range(self.square.file, -1, -1):
             if board[self.square.rank][i] == '-':
                 yield Move(self.square, Square(self.square.rank, i))
             else:
@@ -184,7 +217,7 @@ class Queen(Piece):
                 break
 
         #positive vertical moves
-        for i in range(self.square.file, 8):
+        for i in range(self.square.rank, 8):
             if board[i][self.square.file] == '-':
                 yield Move(self.square, Square(i, self.square.file))
             else:
@@ -193,7 +226,7 @@ class Queen(Piece):
                 break
 
         #negative vertical moves
-        for i in range(self.square.file, -1, -1):
+        for i in range(self.square.rank, -1, -1):
             if board[i][self.square.file] == '-':
                 yield Move(self.square, Square(i, self.square.file))
             else:
@@ -201,8 +234,10 @@ class Queen(Piece):
                     yield Move(self.square, Square(i, self.square.file))
                 break
 
-        #positive positive diagonal
-        for i in range(1, 8 - larger_coord):
+                #positive positive diagonal
+        for i in range(1, 8):
+            if self.square.rank + i > 7 or self.square.file + i > 7:
+                break
             if board[self.square.rank + i][self.square.file + i] == '-':
                 yield Move(self.square, Square(self.square.rank + i, self.square.file + i))
             else:
@@ -211,7 +246,9 @@ class Queen(Piece):
                 break
 
         #negative positive diagonal
-        for i in range(1, 8 - larger_coord):
+        for i in range(1, 8):
+            if self.square.rank - i < 0 or self.square.file + i > 7:
+                break
             if board[self.square.rank - i][self.square.file + i] == '-':
                 yield Move(self.square, Square(self.square.rank - i, self.square.file + i))
             else:
@@ -220,7 +257,9 @@ class Queen(Piece):
                 break
         
         #positive negative diagonal
-        for i in range(1, 8 - smaller_coord):
+        for i in range(1, 8):
+            if self.square.file - i < 0 or self.square.rank + i > 7:
+                break
             if board[self.square.rank + i][self.square.file - i] == '-':
                 yield Move(self.square, Square(self.square.rank + i, self.square.file - i))
             else:
@@ -229,13 +268,20 @@ class Queen(Piece):
                 break
         
         #negative negative diagonal
-        for i in range(1, 8 - smaller_coord):
+        for i in range(1, 8):
+            if self.square.rank - i < 0 or self.square.file - i < 0:
+                break
             if board[self.square.rank - i][self.square.file - i] == '-':
                 yield Move(self.square, Square(self.square.rank - i, self.square.file - i))
             else:
                 if is_enemy_color(piece_to_string(self), board[self.square.rank - i][self.square.file - i]):
                     yield Move(self.square, Square(self.square.rank - i, self.square.file - i))
                 break
+        
+        if self.color == 'W':
+            return 9
+        elif self.color == 'B':
+            return -9
 
 class King(Piece):
     """Models a king on the chessboard"""
@@ -266,9 +312,23 @@ class King(Piece):
 
         for move in kingmoves:
             yield move
+    
+    def get_value(self):
+        """Returns the value of the king"""
+        if self.color == 'W':
+            return 100
+        elif self.color == 'B':
+            return -100
 
 class NoPiece(Piece):
     """Represents an empty square"""
+    def generate_moves(self, board : list[list[str]]):
+        """Returns no moves"""
+        return []
+    
+    def get_value(self):
+        """Returns 0"""
+        return 0
 
 def piece_to_string(piece : Piece):
     """Returns a string representation of a piece"""

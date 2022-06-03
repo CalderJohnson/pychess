@@ -67,9 +67,9 @@ class Board:
             return True
         else:
             return False
-    
-    def is_draw(self, color : str) -> bool:
-        """Check if the game is in stalemate"""
+
+    def is_in_stalemate(self, color : str) -> bool:
+        """Check if the given color is in stalemate"""
         if not self.is_in_check(color):
             for row in self.board:
                 for piece in row:
@@ -110,14 +110,14 @@ class Board:
             for piece in row:
                 if piece == '-':
                     counter += 1
-                    if counter == 8:
-                        fen += '8'
                 else:
                     if counter != 0:
                         fen += str(counter)
                         counter = 0
                     fen += piece
-            counter = 0
+            if counter != 0:
+                fen += str(counter)
+                counter = 0
             fen += '/'
         return fen
 
