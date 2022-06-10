@@ -24,6 +24,11 @@ class Board:
             self.board[move.endsquare.rank][move.endsquare.file] = self.board[move.startsquare.rank][move.startsquare.file]
             self.board[move.endsquare.rank][move.endsquare.file].square = move.endsquare
             self.board[move.startsquare.rank][move.startsquare.file] = NoPiece(move.startsquare.rank, move.startsquare.file, 'N')
+            if isinstance(self.board[move.endsquare.rank][move.endsquare.file], Pawn): #auto queen
+                if move.endsquare.rank == 7:
+                    self.board[move.endsquare.rank][move.endsquare.file] = Queen(move.endsquare.rank, move.endsquare.file, 'W')
+                elif move.endsquare.rank == 0:
+                    self.board[move.endsquare.rank][move.endsquare.file] = Queen(move.endsquare.rank, move.endsquare.file, 'B')
         except IndexError: #moves can also be logically invalid, but this is checked at move generation
             print("Invalid move")
 
@@ -105,7 +110,7 @@ class Board:
         """Board as standard FEN notation"""
         fen = ""
         counter = 0 #number of pieces in a row
-        board_as_characters = reversed(self.board_to_characters()) #to fit with chess coordinates, the board is stored in reverseg
+        board_as_characters = reversed(self.board_to_characters()) #to fit with chess coordinates, the board is stored in reverse
         for row in board_as_characters:
             for piece in row:
                 if piece == '-':

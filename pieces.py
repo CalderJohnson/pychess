@@ -40,7 +40,7 @@ class Pawn(Piece):
         except IndexError:
             pass
         try:
-            if is_enemy_color(piece_to_string(self), board[self.square.rank + direction][self.square.file + 1]):
+            if is_enemy_color(piece_to_string(self), board[self.square.rank + direction][self.square.file - 1]):
                 yield Move(self.square, Square(self.square.rank + direction, self.square.file - 1))
         except IndexError:
             pass
@@ -84,7 +84,10 @@ class Knight(Piece):
 
     def get_value(self) -> int:
         """Returns the value of the knight"""
-        return 3
+        if self.color == 'W':
+            return 3
+        elif self.color == 'B':
+            return -3
 
 class Bishop(Piece):
     """Models a bishop on the chessboard"""

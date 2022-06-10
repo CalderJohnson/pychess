@@ -6,9 +6,10 @@ from models import Move, Square
 
 class Engine:
     """Chess engine"""
-    def __init__(self, board : Board, color : str):
+    def __init__(self, board : Board, color : str, depth : int = 3):
         self.board = board
         self.color = color
+        self.depth = depth
         self.is_in_opening = True
 
     def make_move(self) -> bool:
@@ -17,12 +18,11 @@ class Engine:
         #First check opening database
         if self.is_in_opening:
             if self.color == 'W':
-                with open('./openings/openings_w.json', 'r') as f:
+                with open('openings/openings_w.json', 'r') as f:
                     opening_database = json.load(f)
                     try:
-                        moves = opening_database[self.board.board_to_fen()]
-                        move = random.choice(moves)
-                        move = Move(Square(move[0], move[1]), Square(move[2], move[3])) #overwrite to proper move object
+                        move_chosen = random.choice(opening_database[self.board.board_to_fen()])
+                        move = Move(Square(move_chosen[0], move_chosen[1]), Square(move_chosen[2], move_chosen[3]))
                         self.board.make_move(move)
                         return True
                     except KeyError:
@@ -30,12 +30,9 @@ class Engine:
             elif self.color == 'B':
                 with open('openings/openings_b.json', 'r') as f:
                     opening_database = json.load(f)
-                    print(opening_database)
-                    print(self.board.board_to_fen())
                     try:
-                        moves = opening_database[self.board.board_to_fen()]
-                        move = random.choice(moves)
-                        move = Move(Square(move[0], move[1]), Square(move[2], move[3])) #overwrite to proper move object
+                        move_chosen = random.choice(opening_database[self.board.board_to_fen()])
+                        move = Move(Square(move_chosen[0], move_chosen[1]), Square(move_chosen[2], move_chosen[3]))
                         self.board.make_move(move)
                         return True
                     except KeyError:
@@ -58,13 +55,29 @@ class Engine:
             return False
 
     def evaluate_material(self) -> int:
-        """Evaluate the position in terms of material"""
+        """Evaluate the position in terms of material, with respect to the engine's color"""
         evaluation = 0
         for row in self.board.board:
             for piece in row:
                 evaluation += piece.get_value()
+        if self.color == 'W':
+            return evaluation
+        elif self.color == 'B':
+            return -evaluation
 
     def best_move(self, movelist : list[Move]) -> Move:
         """Engine makes the best move"""
-        #TODO: implement
-        return movelist[0]
+        return self.highest_gain_move(movelist)
+
+    def highest_gain_move(self, movelist : list[Move]) -> Move:
+        """Engine makes the move with the highest material gain"""
+        highest_gain = 0
+        highest_gain_move = random.choice(movelist)
+        reverse_movelist = [Move(move.endsquare, move.startsquare) for move in movelist]
+        for i, move in enumerate(movelist):
+            self.board.make_move(move)
+            if self.evaluate_material() > highest_gain:
+                highest_gain = self.evaluate_material()
+                highest_gain_move = move
+            self.board.make_move(reverse_movelist[i])
+        return highest_gain_move
