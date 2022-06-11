@@ -1,4 +1,5 @@
 """Module for the internal representation of the board"""
+import copy
 from pieces import Pawn, Knight, Bishop, Rook, Queen, King, NoPiece, piece_to_string, string_to_piece
 from models import Move
 
@@ -34,31 +35,31 @@ class Board:
 
     def is_legal_move(self, move : Move, color : str) -> bool:
         """Check if the given move is legal (ie, does not leave the king in check)"""
+        restore_piece = copy.deepcopy(self.board[move.endsquare.rank][move.endsquare.file])
         self.make_move(move)
         if not self.is_in_check(color):
             self.make_move(Move(move.endsquare, move.startsquare)) #restore the board
+            self.board[move.endsquare.rank][move.endsquare.file] = restore_piece
             return True
-        else:
-            self.make_move(Move(move.endsquare, move.startsquare)) #restore the board
-            return False
+        self.make_move(Move(move.endsquare, move.startsquare)) #restore the board
+        self.board[move.endsquare.rank][move.endsquare.file] = restore_piece
+        return False
 
     def is_in_check(self, color : str) -> bool:
         """Check if the given color is in check"""
-
         #locate king
         for row in self.board:
             for piece in row:
                 if isinstance(piece, King) and piece.color == color:
                     king = piece
-
-        #check if any enemy pieces can attack the king
-        for row in self.board:
-            for piece in row:
-                if piece.color != 'N' and piece.color != color:
-                    for move in piece.generate_moves(self.board_to_characters()):
-                        if move.endsquare == king.square:
-                            return True
-        return False
+                    #check if any enemy pieces can attack the king
+                    for row in self.board:
+                        for piece in row:
+                            if piece.color != 'N' and piece.color != color:
+                                for move in piece.generate_moves(self.board_to_characters()):
+                                    if move.endsquare == king.square:
+                                        return True
+                    return False
 
     def is_in_checkmate(self, color : str) -> bool:
         """Check if the given color is in checkmate"""

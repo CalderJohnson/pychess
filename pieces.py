@@ -41,6 +41,8 @@ class Pawn(Piece):
             pass
         try:
             if is_enemy_color(piece_to_string(self), board[self.square.rank + direction][self.square.file - 1]):
+                if self.square.file - 1 < 0:
+                    raise IndexError
                 yield Move(self.square, Square(self.square.rank + direction, self.square.file - 1))
         except IndexError:
             pass
@@ -195,11 +197,7 @@ class Rook(Piece):
 class Queen(Piece):
     """Models a queen on the chessboard"""
     def generate_moves(self, board : list[list[str]]):
-        #TODO copy bishops code over
         """Returns all possible moves for the queen"""
-
-        smaller_coord = min(self.square.rank, self.square.file)
-        larger_coord = max(self.square.rank, self.square.file)
 
         #positive horizontal moves
         for i in range(self.square.file, 8):
@@ -237,7 +235,7 @@ class Queen(Piece):
                     yield Move(self.square, Square(i, self.square.file))
                 break
 
-                #positive positive diagonal
+        #positive positive diagonal
         for i in range(1, 8):
             if self.square.rank + i > 7 or self.square.file + i > 7:
                 break

@@ -1,6 +1,7 @@
 """Module for the chess engine"""
 import json
 import random
+import copy
 from board import Board
 from models import Move, Square
 
@@ -71,13 +72,15 @@ class Engine:
 
     def highest_gain_move(self, movelist : list[Move]) -> Move:
         """Engine makes the move with the highest material gain"""
-        highest_gain = 0
+        print(self.board.board_to_characters())
+        highest_gain = self.evaluate_material()
         highest_gain_move = random.choice(movelist)
-        reverse_movelist = [Move(move.endsquare, move.startsquare) for move in movelist]
-        for i, move in enumerate(movelist):
+        for move in movelist:
+            restore_piece = copy.deepcopy(self.board.board[move.endsquare.rank][move.endsquare.file])
             self.board.make_move(move)
             if self.evaluate_material() > highest_gain:
                 highest_gain = self.evaluate_material()
                 highest_gain_move = move
-            self.board.make_move(reverse_movelist[i])
+            self.board.make_move(Move(move.endsquare, move.startsquare))
+            self.board.board[move.endsquare.rank][move.endsquare.file] = restore_piece
         return highest_gain_move
