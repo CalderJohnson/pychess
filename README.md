@@ -1,1 +1,1 @@
-Chess engine in python, work in progress!
+A simple chess engine written in python
