@@ -1,5 +1,4 @@
 """Module for the chess engine"""
-import json
 import random
 import copy
 from board import Board
@@ -10,77 +9,91 @@ class Engine:
     def __init__(self, board : Board, color : str, depth : int = 3):
         self.board = board
         self.color = color
-        self.depth = depth
-        self.is_in_opening = True
+        self.enemy_color = 'W' if self.color == 'B' else 'B'
 
     def make_move(self) -> bool:
         """Engine makes a move"""
-
-        #First check opening database
-        if self.is_in_opening:
-            if self.color == 'W':
-                with open('openings/openings_w.json', 'r') as f:
-                    opening_database = json.load(f)
-                    try:
-                        move_chosen = random.choice(opening_database[self.board.board_to_fen()])
-                        move = Move(Square(move_chosen[0], move_chosen[1]), Square(move_chosen[2], move_chosen[3]))
-                        self.board.make_move(move)
-                        return True
-                    except KeyError:
-                        self.is_in_opening = False
-            elif self.color == 'B':
-                with open('openings/openings_b.json', 'r') as f:
-                    opening_database = json.load(f)
-                    try:
-                        move_chosen = random.choice(opening_database[self.board.board_to_fen()])
-                        move = Move(Square(move_chosen[0], move_chosen[1]), Square(move_chosen[2], move_chosen[3]))
-                        self.board.make_move(move)
-                        return True
-                    except KeyError:
-                        self.is_in_opening = False
         
-        #Then consult the evaluator
-        legal_moves : list[Move] = []
-        for row in self.board.board:
-            for piece in row:
-                if piece.color == self.color:
-                    for move in piece.generate_moves(self.board.board_to_characters()):
-                        if self.board.is_legal_move(move, self.color):
-                            legal_moves.append(move)
-        if legal_moves:
-            best_move = self.best_move(legal_moves)
+        best_move = self.best_move()
+        if best_move:
             print(f"Engine selects the move {best_move.startsquare.rank},{best_move.startsquare.file} to {best_move.endsquare.rank},{best_move.endsquare.file}")
             self.board.make_move(best_move)
             return True
         else:
             return False
 
-    def evaluate_material(self) -> int:
-        """Evaluate the position in terms of material, with respect to the engine's color"""
+    def evaluate_material(self, color) -> int:
+        """Evaluate the position in terms of material"""
         evaluation = 0
         for row in self.board.board:
             for piece in row:
                 evaluation += piece.get_value()
-        if self.color == 'W':
+        if color == 'W':
             return evaluation
-        elif self.color == 'B':
+        elif color == 'B':
             return -evaluation
 
-    def best_move(self, movelist : list[Move]) -> Move:
-        """Engine makes the best move"""
-        return self.highest_gain_move(movelist)
-
-    def highest_gain_move(self, movelist : list[Move]) -> Move:
-        """Engine makes the move with the highest material gain"""
-        print(self.board.board_to_characters())
-        highest_gain = self.evaluate_material()
+    def highest_gain_move(self, movelist : list[Move], color) -> Move:
+        """Returns the move with the highest material gain"""
+        highest_gain = self.evaluate_material(color)
         highest_gain_move = random.choice(movelist)
         for move in movelist:
             restore_piece = copy.deepcopy(self.board.board[move.endsquare.rank][move.endsquare.file])
             self.board.make_move(move)
-            if self.evaluate_material() > highest_gain:
-                highest_gain = self.evaluate_material()
+            if self.evaluate_material(color) >= highest_gain:
+                highest_gain = self.evaluate_material(color)
                 highest_gain_move = move
             self.board.make_move(Move(move.endsquare, move.startsquare))
             self.board.board[move.endsquare.rank][move.endsquare.file] = restore_piece
         return highest_gain_move
+
+    def best_move(self) -> Move:
+        """Engine recursively determines a strong move"""
+        savestate = self.board.board_to_fen() #save the board
+        initial_evaluation = self.evaluate_material(self.color)
+
+        movelist : list[Move] = [] #determine all legal moves
+        for row in self.board.board:
+            for piece in row:
+                if piece.color == self.color:
+                    for move in piece.generate_moves(self.board.board_to_characters()):
+                        if self.board.is_legal_move(move, self.color):
+                            movelist.append(move)
+
+        best_move = self.highest_gain_move(movelist, self.color) #returns the move with the highest material gain, if does not incur a costly immediate response
+        self.board.make_move(best_move)
+        enemy_movelist : list[Move] = []
+        for row in self.board.board:
+            for piece in row:
+                if piece.color == self.enemy_color:
+                    for move in piece.generate_moves(self.board.board_to_characters()):
+                        if self.board.is_legal_move(move, self.enemy_color):
+                            enemy_movelist.append(move)
+        self.board.make_move(self.highest_gain_move(enemy_movelist, self.enemy_color))
+        if self.evaluate_material(self.color) > initial_evaluation: #returns it if too much material is not lost in response
+            self.board.fen_to_board(savestate) #restore the board
+            return best_move
+
+
+        best_move = random.choice(movelist) #makes the best defensive move
+        best_evaluation = initial_evaluation
+        self.board.fen_to_board(savestate) #restore the board
+        for move in movelist: #test the risk every move possible creates, pick one with the lowest
+            self.board.make_move(move)
+            enemy_movelist : list[Move] = []
+            for row in self.board.board:
+                for piece in row:
+                    if piece.color == self.enemy_color:
+                        for enemy_move in piece.generate_moves(self.board.board_to_characters()):
+                            if self.board.is_legal_move(enemy_move, self.enemy_color):
+                                enemy_movelist.append(enemy_move)
+            self.board.make_move(self.highest_gain_move(enemy_movelist, self.enemy_color))
+            if self.evaluate_material(self.color) > best_evaluation: #pick a move that is not detrimental
+                best_evaluation = self.evaluate_material(self.color)
+                best_move = move
+            self.board.fen_to_board(savestate) #restore the board
+        return best_move
+        
+
+
+
