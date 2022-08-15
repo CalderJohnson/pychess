@@ -1,5 +1,4 @@
 """Representations for squares and moves on the chessboard"""
-import types
 
 class Square:
     """Representation of a square on the chess board"""

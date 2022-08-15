@@ -2,11 +2,11 @@
 import random
 import copy
 from board import Board
-from models import Move, Square
+from models import Move
 
 class Engine:
     """Chess engine"""
-    def __init__(self, board : Board, color : str, depth : int = 3):
+    def __init__(self, board : Board, color : str):
         self.board = board
         self.color = color
         self.enemy_color = 'W' if self.color == 'B' else 'B'
@@ -48,7 +48,7 @@ class Engine:
         return highest_gain_move
 
     def best_move(self) -> Move:
-        """Engine recursively determines a strong move"""
+        """Engine determines a strong move"""
         savestate = self.board.board_to_fen() #save the board
         initial_evaluation = self.evaluate_material(self.color)
 
@@ -70,7 +70,7 @@ class Engine:
                         if self.board.is_legal_move(move, self.enemy_color):
                             enemy_movelist.append(move)
         self.board.make_move(self.highest_gain_move(enemy_movelist, self.enemy_color))
-        if self.evaluate_material(self.color) > initial_evaluation: #returns it if too much material is not lost in response
+        if self.evaluate_material(self.color) >= initial_evaluation: #returns it if too much material is not lost in response
             self.board.fen_to_board(savestate) #restore the board
             return best_move
 
