@@ -6,7 +6,6 @@ from engine import Engine
 def main():
     board = Board()
     engine = Engine(board, 'B')
-    print(board.board_to_characters())
     while True:
         print("  0 1 2 3 4 5 6 7")
         rank = 0
